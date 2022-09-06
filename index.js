@@ -1,5 +1,6 @@
 const { ApolloServer, gql, ApolloError } = require("apollo-server");
 
+
 const typeDefs = gql`
   type User {
     id: Int!
@@ -19,9 +20,7 @@ const typeDefs = gql`
 `;
 
 const arrUser = [];
-
 let baseId = 0;
-
 const resolvers = {
   Query: {
     FindManyUsers: (parent, args) => {
@@ -52,7 +51,20 @@ const resolvers = {
         age: args.age,
       };
       baseId++;
-      arrUser.push(newUser);
+
+
+      if (args.age > 1 && args.name.trim() != '') {
+        arrUser.push(newUser);
+      }
+
+      else {
+        if(args.age <= 0 ){
+          return new ApolloError("A idade só pode ser maior que zero")
+        }
+        if(args.name == ''){
+          return new ApolloError("O nome não pode ser vazio")
+        }
+      }
 
       return newUser;
     },
@@ -61,11 +73,12 @@ const resolvers = {
       if (!foundUser) {
         return new ApolloError("Usuário não encontrado");
       }
-      if (args.name) {
+      if (args.age > 1 && args.name.trim() != '') {
         foundUser.name = args.name;
-      }
-      if (args.age) {
         foundUser.age = args.age;
+      }
+      else {
+        return new ApolloError("O valor não pode ser vazio")
       }
 
       return foundUser;
@@ -76,7 +89,7 @@ const resolvers = {
         return new ApolloError("Usuário não encontrado");
       }
       if (args.id) {
-        return arrUser.splice(arrUser.indexOf(deleteUser), 1);
+        return aarrUser.splice(arrUser.indexOf(deleteUser), 1);
       }
 
       return deleteUser;
