@@ -14,22 +14,35 @@ const typeDefs = gql`
 
   type Mutation {
     createUser(name: String!, age: Int!): User
-    updateUser(id: Int!, name: String, age: Int,deleted: Boolean): User
+    updateUser(id: Int!, name: String, age: Int, deleted: Boolean): User
     softDelete(id: Int!): User
     deleteUser(id: Int!): [User]
   }
 `;
 
 const arrUser = [];
-const delArr = []
+const delArr = [];
 let baseId = 0;
 const resolvers = {
   Query: {
     FindManyUsers: (parent, args) => {
       if (args.name) {
-        
-        return arrUser.filter((users) => users.name.startsWith(args.name));
+        return arrUser.filter((users) =>
+          users.name
+            .toUpperCase()
+            .trim()
+            .normalize("NFD")
+            .replace(/[^a-zA-Z0-9s]/g, "")
+            .startsWith(
+              args.name
+                .toUpperCase()
+                .trim()
+                .normalize("NFD")
+                .replace(/[^a-zA-Z0-9s]/g, "")
+            )
+        );
       }
+
       return arrUser;
     },
     FindUser: (parent, args, context, info) => {
@@ -44,7 +57,7 @@ const resolvers = {
         return foundOneUser;
       }
     },
-    FindDeactivatedUsers: () => delArr
+    FindDeactivatedUsers: () => delArr,
   },
 
   Mutation: {
@@ -70,7 +83,7 @@ const resolvers = {
         if (args.name == "") {
           return new ApolloError("O nome não pode ser vazio");
         }
-      }  
+      }
 
       return newUser;
     },
@@ -89,23 +102,25 @@ const resolvers = {
       return foundUser;
     },
 
-        softDelete: (parent, args, context, info) => {
+    softDelete: (parent, args, context, info) => {
       const deleteUser = arrUser.find((UserId) => UserId.id == args.id);
       if (!deleteUser) {
         return new ApolloError("Usuário não encontrado");
       }
       if (args.id) {
-        delArr.push(deleteUser)
+        delArr.push(deleteUser);
         arrUser.splice(arrUser.indexOf(deleteUser), 1);
       }
 
       return deleteUser;
     },
-    
+
     deleteUser: (parent, args, context, info) => {
       const deleteUser = delArr.find((UserId) => UserId.id == args.id);
       if (!deleteUser) {
-        return new ApolloError("Usuário não desativado! Desative-o antes de deletear");
+        return new ApolloError(
+          "Usuário não desativado! Desative-o antes de deletear"
+        );
       }
       if (args.id) {
         return delArr.splice(delArr.indexOf(deleteUser), 1);
