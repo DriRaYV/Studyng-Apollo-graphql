@@ -15,6 +15,7 @@ const typeDefs = gql`
   type Mutation {
     createUser(name: String!, age: Int!): User
     updateUser(id: Int!, name: String, age: Int): User
+    softDelete(id: Int!): User
     deleteUser(id: Int!): [User]
   }
 `;
@@ -25,7 +26,7 @@ const resolvers = {
   Query: {
     FindManyUsers: (parent, args) => {
       if (args.name) {
-        return arrUser.filter((users) => users.name.startsWith(args.name));
+        return arrUser.filter((users) => users.name.toUpperCase().trim().replace(/[^a-zA-Z0-9s]/g, "").startsWith(args.name.toUpperCase().trim().replace(/[^a-zA-Z0-9s]/g, "")));
       }
       return arrUser;
     },
@@ -79,17 +80,34 @@ const resolvers = {
       }
       else {
         return new ApolloError("O valor não pode ser vazio")
+        
       }
 
       return foundUser;
     },
+
+    softDelete: (parent,args,context,info) => {
+      const foundUser = arrUser.find((UserId) => UserId.id == args.id);
+      if (!foundUser) {
+        return new ApolloError("Usuário não encontrado");
+      }
+      if (args.age > 1 && args.name.trim() != '') {
+        foundUser.name = args.name;
+        foundUser.age = args.age;
+      }
+      else {
+        return new ApolloError("O valor não pode ser vazio")
+        
+      }
+    },
+
     deleteUser: (parent, args, context, info) => {
       const deleteUser = arrUser.find((UserId) => UserId.id == args.id);
       if (!deleteUser) {
         return new ApolloError("Usuário não encontrado");
       }
       if (args.id) {
-        return aarrUser.splice(arrUser.indexOf(deleteUser), 1);
+        return arrUser.splice(arrUser.indexOf(deleteUser), 1);
       }
 
       return deleteUser;
